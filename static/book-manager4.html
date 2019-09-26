@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+    <script src="https://cdn.bootcss.com/vuex/3.1.1/vuex.min.js"></script>
+    <style>
+        body{
+            background-color: lightgray;
+        }
+        #app{
+            width: 1000px;
+            background-color: #fff;
+            padding: 30px;
+            margin: 0px auto;
+            font-size: 1.3em;
+        }
+        #app button{
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+        #app input{
+            font-size: 1.2em;
+        }
+        table{
+            width: 100%;
+            border: 2px solid black;
+            border-collapse: collapse;
+        }
+        tr:first-child{
+            background-color: lightblue;
+        }
+        td,th{
+            border: 1px solid gray;
+        }
+        tr.odd{
+            background-color: lightgray;
+        }
+        tr.active{
+            background-color: burlywood;
+        }
+        .one-book{
+            width: 700px;
+            height: 500px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 10px 10px 10px gray;
+        }
+        .one-book span{
+            color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <h1>第四版本：基于VueX方式完成,加入自定义的过滤器</h1>
+        <hr>
+        <!-- 添加图书的表单组件-->
+        <!-- 取消事件绑定 -->
+        <book-add-form></book-add-form><hr>
+        <table>
+            <tr>
+                <th>编号</th>
+                <th>书名</th>
+                <th>价格</th>
+                <th>数量</th>
+                <th>删除</th>
+                <th>更新</th>
+            </tr>
+
+            <tr v-for="(book,index) of store.state.books" :key="book.id" :class="{odd:index%2,active:store.state.currentBook===book}">
+                <!-- 直接使用表达式，简化代码-->
+                <td><a href="#" @click="store.state.currentBook=book">{{book.id}}</a></td>
+                <td><a href="#" @click="store.state.currentBook=book">{{book.name}}</a></td>
+                <td>{{book.price}}</td>
+                <td><input type="number" v-model="book.count"></td>
+                <td><button @click="deleteBook(book)">删除</button></td>
+                <td><button @click="updateBook(book)">更新</button></td>
+            </tr>
+        </table>
+        <hr>
+        <!-- 过滤器 -->
+        <h3>价格统计：<span>{{totalPrice|numformat|currency}}</span></h3>
+        <hr>
+        <!--图书的详情组件-->
+        <book-detail v-if="store.state.currentBook!=null"></book-detail>
+    </div>
+
+    <!-- 子组件模板-->
+
+    <!--    表单组件-->
+    <script type="text/x-template" id="book-add-form">
+        <div id="book-form">
+            <form @submit.prevent="addBook">
+                <input type="text" placeholder="book name" ref="name" value="JavaScript设计模式">
+                <input type="number" min="0" step="0.5" placeholder="book price" ref="price" value="50">
+                <input type="number" min="0" step="1" placeholder="book  number" ref="count" value="2">
+                <button>添加一本书</button>
+            </form>
+        </div>
+    </script>
+
+    <!--    图书详情组件-->
+    <script type="text/x-template" id="book-detail">
+        <div  class="one-book">
+            <hr>
+            <button @click="store.state.currentBook=null">隐藏</button>
+            <hr>
+            <img :src="store.state.currentBook.img" alt="这本书的漂亮照片，你没有上传">
+            <h3>图书名称：<span>{{store.state.currentBook.name}}</span></h3>
+            <h3>图书价格：<span>{{store.state.currentBook.price}}</span></h3>
+            <h3>图书数量：<span>{{store.state.currentBook.count}}</span></h3>
+        </div>
+    </script>
+
+    <script>
+        let maxId=0;
+        const store = new Vuex.Store({
+            state: {
+                currentBook:null,
+                books:[{id:++maxId,name:'JavaScript:The good parts',price:28.5,count:3,
+                    img:'https://img13.360buyimg.com/n1/s200x200_g13/M02/04/0E/rBEhVFHbZw0IAAAAAALFxgN_LSsAAA3fgLESAwAAsXe559.jpg'},
+                    {id:++maxId,name:'Professinal Javascript for web developers',price:89,count:10,
+                        img:'https://img12.360buyimg.com/n1/s200x200_jfs/t18991/220/897182682/82442/2b56b48/5ab1dbeeN41b1af99.jpg'},
+                    {id:++maxId,name:'Javascript:The Definitive Guide',price:111.2,count:5,
+                        img:'https://img11.360buyimg.com/n1/s200x200_jfs/t2047/63/2033152973/398005/5ea9044e/56ea5e6aN38c0f2b8.jpg'}
+                ]
+            },
+            mutations: {
+                addBook: (state,book) => state.books.push(book),
+                deleteBook: (state,book)=>{
+                    let index=state.books.findIndex(bk=>bk.id===book.id);
+                    state.books.splice(index,1)
+                },
+                clearCurrentBook: state=>state.currentBook=null
+            }
+        })
+
+        Vue.component("book-detail",{template:'#book-detail'})
+
+        Vue.component("book-add-form",{template:'#book-add-form',
+            data:()=>store,
+            methods: {
+                addBook(){
+                    let book={id:++maxId,name:this.$refs.name.value,price:this.$refs.price.value,count:this.$refs.count.value}
+                    store.commit('addBook',book)
+                }
+            }
+        });
+
+        let vm=new Vue({
+            el:'#app',
+            data:store,
+            methods:{
+                deleteBook(book){
+                    store.commit('deleteBook',book)
+                    store.commit('clearCurrentBook');
+                },
+                updateBook(book){
+                    let price=window.prompt("修改价格",book.price)
+                    if(!Number.isNaN(Number.parseFloat(price))){book.price=price}
+                }
+            },
+            computed:{
+                totalPrice(){
+                    return store.state.books.reduce((p,book)=>book.price*book.count+p,0)
+                }
+            },
+            filters: {
+                numformat: function (value) {
+                    return Math.round(value*100)/100
+                },
+                currency:function (value) {
+                    return "$ "+value
+                }
+            }
+        })
+    </script>
+</body>
+</html>
