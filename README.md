@@ -1,6 +1,9 @@
-# hello-world
+# book-manager
+
+
 
 ## Project setup
+
 ```
 npm install
 ```
